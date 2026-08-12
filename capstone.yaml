@@ -1,0 +1,41 @@
+name: usage-metering-billing-engine
+track: backend-ai-engineering
+run: "uvicorn app.main:app --host 0.0.0.0 --port 8000"
+seed: "python -m scripts.seed"
+test: "pytest -v"
+base_url: "http://localhost:8000"
+
+endpoints:
+  - method: POST
+    path: /generate
+    description: >
+      The billable action. Records a usage event (idempotent on
+      idempotency_key), enforces quota before recording, calculates cost.
+  - method: GET
+    path: /usage
+    query_params: [tenant_id]
+    description: Rollup of used/limit/cost for the tenant's current billing period.
+  - method: POST
+    path: /billing/checkout
+    description: Creates a Stripe test-mode (or simulated) Checkout session for a tenant.
+  - method: POST
+    path: /webhooks/stripe
+    description: >
+      Signature-verified, deduplicated Stripe webhook receiver. Handles
+      checkout.session.completed, customer.subscription.updated,
+      customer.subscription.deleted.
+  - method: GET
+    path: /health
+    description: Liveness check.
+
+demo_tenants:
+  - id: 1
+    name: "Acme Corp"
+    plan: free
+  - id: 2
+    name: "Globex Inc"
+    plan: pro
+  - id: 3
+    name: "Initech (near quota)"
+    plan: free
+    note: "seeded at 999/1000 API calls -- next call demos the exact boundary"
